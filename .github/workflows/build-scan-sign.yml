@@ -31,7 +31,7 @@ jobs:
           sudo mv gitleaks /usr/local/bin/
 
       - name: Secret scan - userservice folder only, current files only
-        run: gitleaks detect --no-git --source=src/accounts/userservice --redact -v
+        run: gitleaks detect --no-git --source=src/accounts/userservice --config=.gitleaks.toml --redact -v
 
       - name: Dependency vulnerability scan (Trivy, filesystem mode)
         uses: aquasecurity/trivy-action@v0.36.0
