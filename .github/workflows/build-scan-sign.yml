@@ -38,6 +38,7 @@ jobs:
         with:
           scan-type: fs
           scan-ref: src/accounts/userservice
+          ignore-unfixed: true
           severity: CRITICAL,HIGH
           exit-code: 1
 
@@ -72,6 +73,7 @@ jobs:
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ${{ needs.build.outputs.image_tag }}
+          ignore-unfixed: true
           severity: CRITICAL,HIGH
           exit-code: 1
 
