@@ -213,4 +213,5 @@ venv-*
 go/
 
 # GitHub Actions Google Cloud credentials JSON
-gha-creds-*.json
+gha-creds-*.jsonconftest
+conftest.tar.gz
