@@ -2,8 +2,9 @@ package main
 
 deny[msg] {
     input.kind == "Deployment"
-    not input.spec.template.spec.containers[_].resources.limits
-    msg := "Deployment must set resource limits (CPU/memory) on every container"
+    container := input.spec.template.spec.containers[_]
+    not container.resources.limits
+    msg := sprintf("Container '%s' must set resource limits (CPU/memory)", [container.name])
 }
 
 deny[msg] {
