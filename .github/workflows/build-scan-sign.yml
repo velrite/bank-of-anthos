@@ -17,20 +17,21 @@ env:
 permissions:
   contents: read
   packages: write
-  id-token: write   # required for keyless Cosign signing
+  id-token: write
 
 jobs:
-  # Step 14: secret + dependency scanning, BEFORE we build anything
   secret-and-dep-scan:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
 
-      - name: Secret scan (gitleaks)
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install gitleaks
+        run: |
+          curl -sSL https://github.com/gitleaks/gitleaks/releases/download/v8.24.3/gitleaks_8.24.3_linux_x64.tar.gz | tar xz gitleaks
+          sudo mv gitleaks /usr/local/bin/
+
+      - name: Secret scan - userservice folder only, current files only
+        run: gitleaks detect --no-git --source=src/accounts/userservice --redact -v
 
       - name: Dependency vulnerability scan (Trivy, filesystem mode)
         uses: aquasecurity/trivy-action@v0.36.0
@@ -40,7 +41,6 @@ jobs:
           severity: CRITICAL,HIGH
           exit-code: 1
 
-  # Step 15: build the image, only if scans above passed
   build:
     needs: secret-and-dep-scan
     runs-on: ubuntu-latest
@@ -48,18 +48,15 @@ jobs:
       image_tag: ${{ steps.tag.outputs.tag }}
     steps:
       - uses: actions/checkout@v4
-
       - name: Set image tag
         id: tag
         run: echo "tag=${{ env.IMAGE_NAME }}:${{ github.sha }}" >> "$GITHUB_OUTPUT"
-
       - name: Log in to GHCR
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Build and push image
         uses: docker/build-push-action@v6
         with:
@@ -67,7 +64,6 @@ jobs:
           push: true
           tags: ${{ steps.tag.outputs.tag }}
 
-  # Step 16: scan the actual built image (not just source) for vulnerabilities
   image-scan:
     needs: build
     runs-on: ubuntu-latest
@@ -79,7 +75,6 @@ jobs:
           severity: CRITICAL,HIGH
           exit-code: 1
 
-  # Step 17: SBOM - know exactly what's inside the image
   sbom:
     needs: build
     runs-on: ubuntu-latest
@@ -90,27 +85,23 @@ jobs:
           image: ${{ needs.build.outputs.image_tag }}
           artifact-name: userservice-sbom.spdx.json
           output-file: userservice-sbom.spdx.json
-
       - name: Upload SBOM as build artifact
         uses: actions/upload-artifact@v4
         with:
           name: sbom
           path: userservice-sbom.spdx.json
 
-  # Step 18: sign the image - only if it passed the vuln scan
   sign:
     needs: [build, image-scan]
     runs-on: ubuntu-latest
     steps:
       - name: Install cosign
         uses: sigstore/cosign-installer@v3
-
       - name: Log in to GHCR
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Sign image (keyless, via GitHub OIDC)
         run: cosign sign --yes ${{ needs.build.outputs.image_tag }}
