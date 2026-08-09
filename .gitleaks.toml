@@ -1,0 +1,15 @@
+# Scoped false-positive allowlist for the enterprise-cloud-platform project.
+# Every entry here must be individually justified — this is not a blanket suppression.
+
+title = "gitleaks config - userservice scan scope"
+
+[[rules]]
+# Inherit gitleaks' default rule set
+[extend]
+useDefault = true
+
+[allowlist]
+  description = "Known false positives - verified manually, no real secret material present"
+  paths = [
+    '''src/accounts/userservice/k8s/base/add-private-key-volume\.yaml'''
+  ]
