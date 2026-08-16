@@ -215,3 +215,6 @@ go/
 # GitHub Actions Google Cloud credentials JSON
 gha-creds-*.jsonconftest
 conftest.tar.gz
+argocd-install.yaml
+argocd-userservice-app.yaml
+conftest
