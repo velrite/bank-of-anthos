@@ -41,7 +41,7 @@ spec:
               - all
           privileged: false
           readOnlyRootFilesystem: true
-        image: userservice
+        image: ghcr.io/velrite/bank-of-anthos-userservice:2821d02ca8d16770111a17a5284211fdcab41434
         ports:
         - name: http-server
           containerPort: 8080
