@@ -1,0 +1,84 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: userservice
+  labels:
+    app: userservice
+    application: bank-of-anthos
+    team: accounts
+    tier: backend
+spec:
+  replicas: 2
+  strategy:
+    canary:
+      steps:
+        - setWeight: 25
+        - pause: {duration: 30s}
+        - setWeight: 50
+        - pause: {duration: 30s}
+        - setWeight: 100
+      analysis:
+        templates:
+          - templateName: userservice-success-rate
+        startingStep: 1
+  selector:
+    matchLabels:
+      app: userservice
+  template:
+    metadata:
+      labels:
+        app: userservice
+        application: bank-of-anthos
+        team: accounts
+        tier: backend
+    spec:
+      serviceAccountName: bank-of-anthos
+      containers:
+        - name: userservice
+          image: ghcr.io/velrite/bank-of-anthos-userservice:2821d02ca8d16770111a17a5284211fdcab41434
+          ports:
+            - name: http-server
+              containerPort: 8080
+          env:
+            - name: VERSION
+              value: "dev"
+            - name: PORT
+              value: "8080"
+            - name: ENABLE_TRACING
+              value: "false"
+            - name: TOKEN_EXPIRY_SECONDS
+              value: "3600"
+            - name: PRIV_KEY_PATH
+              value: "/tmp/.ssh/privatekey"
+            - name: LOG_LEVEL
+              value: "info"
+          envFrom:
+            - configMapRef:
+                name: environment-config
+            - configMapRef:
+                name: accounts-db-config
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 260m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          volumeMounts:
+            - name: keys
+              mountPath: /tmp/.ssh
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: keys
+          secret:
+            secretName: jwt-key
+        - name: tmp
+          emptyDir: {}

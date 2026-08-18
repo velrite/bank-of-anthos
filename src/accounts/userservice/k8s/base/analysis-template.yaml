@@ -1,0 +1,14 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: userservice-success-rate
+spec:
+  metrics:
+    - name: readiness-check
+      interval: 10s
+      successCondition: result == "true"
+      failureLimit: 2
+      provider:
+        web:
+          url: "http://userservice.bank-of-anthos.svc.cluster.local:8080/ready"
+          jsonPath: "{$.status == 200}"
