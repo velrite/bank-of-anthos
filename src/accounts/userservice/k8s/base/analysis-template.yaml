@@ -6,9 +6,9 @@ spec:
   metrics:
     - name: readiness-check
       interval: 10s
-      successCondition: result == "true"
+      successCondition: result.status == 200
       failureLimit: 2
       provider:
         web:
           url: "http://userservice.bank-of-anthos.svc.cluster.local:8080/ready"
-          jsonPath: "{$.status == 200}"
+          jsonPath: "{$.status}"
