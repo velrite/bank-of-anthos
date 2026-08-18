@@ -218,3 +218,4 @@ conftest.tar.gz
 argocd-install.yaml
 argocd-userservice-app.yaml
 conftest
+istio-1.30.3/
